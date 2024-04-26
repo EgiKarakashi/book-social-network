@@ -3,6 +3,7 @@ package com.egi.book.auth
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.mail.MessagingException
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -15,11 +16,12 @@ class AuthenticationController(
 ) {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @Throws(MessagingException::class)
+    @Throws(MessagingException::class, IllegalStateException::class)
     fun register(
         @RequestBody @Valid request: RegistrationRequest,
     ): ResponseEntity<*> {
         authenticationService.register(request)
+
         return ResponseEntity.accepted().build<Any>()
     }
 
@@ -40,4 +42,7 @@ class AuthenticationController(
         authenticationService.activateAccount(token)
     }
 
+    companion object {
+        private val log = LoggerFactory.getLogger(AuthenticationController::class.java)
+    }
 }

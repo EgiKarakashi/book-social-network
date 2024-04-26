@@ -6,12 +6,12 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 
 data class AuthenticationRequest(
-    @Email(message = "Email is not well formatted")
-    @NotEmpty(message = "Email is mandatory")
-    @NotBlank(message = "Email is mandatory")
+    @field:Email(message = "Email is not well formatted")
+    @field:NotEmpty(message = "Email is mandatory")
+    @field:NotBlank(message = "Email is mandatory")
     val email: String,
-    @Size(min = 8, message = "Password should be more than 8 characters")
-    @NotEmpty(message = "Password is mandatory")
-    @NotBlank(message = "Password is mandatory")
+    @field:Size(min = 8, message = "Password should be more than 8 characters")
+    @field:NotEmpty(message = "Password is mandatory")
+    @field:NotBlank(message = "Password is mandatory")
     val password: String,
 )

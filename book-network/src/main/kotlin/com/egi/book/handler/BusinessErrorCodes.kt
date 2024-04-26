@@ -6,9 +6,8 @@ import org.springframework.http.HttpStatus.*
 enum class BusinessErrorCodes(
     val code: Int,
     val httpStatus: HttpStatus,
-    val description: String
-    ) {
-
+    val description: String,
+) {
     NO_CODE(0, NOT_IMPLEMENTED, "No code"),
     INCORRECT_CURRENT_PASSWORD(300, BAD_REQUEST, "Current password is incorrect"),
     NEW_PASSWORD_DOES_NOT_MATCH(301, BAD_REQUEST, "The new password does not match"),

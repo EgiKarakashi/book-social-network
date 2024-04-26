@@ -1,5 +1,7 @@
 package com.egi.book.user
 
+import com.egi.book.book.Book
+import com.egi.book.history.BookTransactionHistory
 import com.egi.book.role.Role
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
@@ -30,6 +32,9 @@ data class User(
     @ManyToMany(fetch = FetchType.EAGER)
     @JsonIgnore
     private val roles: MutableList<Role?> = mutableListOf(),
+    @OneToMany(mappedBy = "owner") val books: MutableList<Book?> = mutableListOf(),
+    @OneToMany(mappedBy = "user")
+    private val histories: MutableList<BookTransactionHistory> = mutableListOf(),
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private val createdDate: LocalDateTime = LocalDateTime.now(),
