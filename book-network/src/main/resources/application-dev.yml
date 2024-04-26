@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: ${PG_URL}
+    username: ${PG_USERNAME}
+    password: ${PG_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: localhost
+    port: 1025
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          trust: "*"
+        auth: true
+        starttls:
+          enable: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
+server:
+  port: 8088
+
+
+application:
+  mailing:
+    frontend:
+      activation-url: http://localhost:4200/activate-account
+  account:
+    email: ${MAIL_USERNAME}
+    name: ${NAME}
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      expiration: 8640000
