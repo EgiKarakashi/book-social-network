@@ -29,7 +29,7 @@ spring:
         timeout: 3000
         writetimeout: 5000
 server:
-  port: 8088
+  port: 8089
 
 
 application:
@@ -39,6 +39,9 @@ application:
   account:
     email: ${MAIL_USERNAME}
     name: ${NAME}
+  file:
+    upload:
+      photos-output-path: ./uploads
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}

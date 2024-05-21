@@ -18,9 +18,9 @@ data class Book(
     val authorName: String? = null,
     val isbn: String? = null,
     val synopsis: String? = null,
-    private val bookCover: String? = null,
-    val archived: Boolean? = null,
-    val shareable: Boolean? = null,
+    var bookCover: String? = null,
+    var archived: Boolean? = null,
+    var shareable: Boolean? = null,
     @ManyToOne
     @JoinColumn(name = "owner_id")
     var owner: User? = null,

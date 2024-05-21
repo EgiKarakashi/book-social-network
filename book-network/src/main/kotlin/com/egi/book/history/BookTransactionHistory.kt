@@ -15,8 +15,8 @@ data class BookTransactionHistory(
     private val user: User,
     @ManyToOne
     @JoinColumn(name = "book_id") val book: Book,
-    val returned: Boolean,
-    val returnApproved: Boolean,
+    var returned: Boolean,
+    var returnApproved: Boolean,
 ) : BaseEntity(
         id = 0,
         createdDate = LocalDateTime.now(),

@@ -1,5 +1,6 @@
 package com.egi.book.book
 
+import com.egi.book.book.file.FileUtils
 import com.egi.book.history.BookTransactionHistory
 import org.springframework.stereotype.Service
 
@@ -28,8 +29,7 @@ class BookMapper {
             archived = book.archived,
             shareable = book.shareable,
             owner = book.owner?.fullName(),
-            // TODO implement later
-//            cover = FileU
+            cover = FileUtils.readFileFromLocation(book.bookCover)
         )
     }
 
@@ -41,7 +41,7 @@ class BookMapper {
             isbn = history.book.isbn,
             rate = history.book.getRate(),
             returned = history.returned,
-            returnApproved = history.returnApproved
+            returnApproved = history.returnApproved,
         )
     }
 }

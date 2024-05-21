@@ -1,5 +1,6 @@
 package com.egi.book.handler
 
+import com.egi.book.exception.OperationNotPermittedException
 import com.egi.book.handler.BusinessErrorCodes.*
 import jakarta.mail.MessagingException
 import org.springframework.http.HttpStatus.*
@@ -56,6 +57,17 @@ class GlobalExceptionHandler {
     fun handleException(exp: MessagingException): ResponseEntity<ExceptionResponse> {
         return ResponseEntity
             .status(INTERNAL_SERVER_ERROR)
+            .body(
+                ExceptionResponse(
+                    error = exp.message,
+                ),
+            )
+    }
+
+    @ExceptionHandler(OperationNotPermittedException::class)
+    fun handleException(exp: OperationNotPermittedException): ResponseEntity<ExceptionResponse> {
+        return ResponseEntity
+            .status(BAD_REQUEST)
             .body(
                 ExceptionResponse(
                     error = exp.message,
