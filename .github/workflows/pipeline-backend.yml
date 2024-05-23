@@ -69,9 +69,30 @@ jobs:
             tar -xzf kustomize.tar.gz
             chmod u+x ./kustomize
 
-      - name: Deploy Image to GKE cluster
+      - name: Prepare kustomization.yaml
         run: |
-            ./kustomize edit set image gcr.io/$PROJECT_ID/$IMAGE:$TAG=gcr.io/$PROJECT_ID/$IMAGE:$TAG
+          echo "
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - deployment.yaml
+            - service.yaml
+          images:
+            - name: gcr.io/$PROJECT_ID/$IMAGE
+              newName: gcr.io/$PROJECT_ID/$IMAGE
+              newTag: $TAG
+          " > kustomization.yaml
+
+          - name: Deploy Image to GKE cluster
+          run: |
             ./kustomize build . | kubectl apply -f -
-            kubectl rollout status deployment/$DEPLOYMENT_NAME
-            kubectl get services -o wide
+            kubectl rollout status deployment/$DEPLOYMENT_NAME || kubectl describe deployment $DEPLOYMENT_NAME || kubectl logs deployment/$DEPLOYMENT_NAME
+  
+      - name: Fetch Deployment Events
+        run: |
+          kubectl get events --sort-by=.metadata.creationTimestamp
+          
+      - name: Fetch Pod Logs
+        run: |
+          POD_NAME=$(kubectl get pods -l app=$DEPLOYMENT_NAME -o jsonpath='{.items[0].metadata.name}')
+          kubectl logs $POD_NAME
