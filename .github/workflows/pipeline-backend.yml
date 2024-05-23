@@ -3,125 +3,66 @@ name: BSN Backend API Pipeline
 on:
   push:
     branches:
-      - ci/pipeline
       - master
-    paths:
-      - book-network/**
-      - docker/backend/**
-      - 'docker-compose.yml'
-      - .github/workflows/*-backend.yml
+
+env:
+  PROJECT_ID: ${{secrets.GKE_PROJECT}}
+  GKE_CLUSTER: book-social-network
+  GKE_ZONE: europe-west3-c
+  DEPLOYMENT_NAME: book-social-network-deployment
+  IMAGE: book-social-network-image
+  TAG: 1.0.0
 
 jobs:
-  compile:
-    runs-on: self-hosted
-    name: Compile project
+  setup-build-publish-deploy:
+    name: Setup Build Publish Deploy
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup JDK
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'corretto'
+          java-version: 17
+          server-id: github
+          settings-path: ${{github.workspace}}
 
-      - name: Running Unit Tests
+      - name: Build with Maven
+        uses: mvn clean package -DskipTests
+
+      - name: Setup Google Cloud CLI
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@2.1.0
+        env: 
+          ACTTIONS_ALLOW_UNSECURE_COMMANDS: true
+        with:
+          service_account_key: ${{secrets.GKE_SA_KEY}}
+          project_id: ${{secrets.GKE_PROJECT}}
+
+      - name: Configure Docker
         run: |
-          cd book-network
-          ./mvnw clean compile
+          gcloud --quiet auth configure-docker
 
-  unit-tests:
-    runs-on: self-hosted
-    name: Unit tests
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: "corretto"
-
-      - name: Running Unit Tests
+      - name: Get GKE Credentials
         run: |
-          cd book-network
-          ./mvnw clean test
+          gcloud container clusters get-credentials "$GKE_CLUSTER" --zone "$GKE_ZONE"
 
-  build:
-    runs-on: self-hosted
-    name: Build backend
-    needs: [compile, unit-tests]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'corretto'
-      - name: Compile project
+      - name: Build Docker Image
         run: |
-          cd book-network
-          ./mvnw clean compile
+          docker build --tag "gcr.io/$PROJECT_ID/$IMAGE:$TAG"
 
-  build-image:
-    name: Build Docker image
-    runs-on: self-hosted
-    needs: [build]
-    steps:
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'corretto'
-      - name: Extract project version
-        id: extract_version
+      - name: Publish Docker Image to GCR
         run: |
-          cd book-network
-          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
+          docker push "gcr.io/$PROJECT_ID/$IMAGE:$TAG"
 
-      - name: Login to DockerHub
-        uses: docker/login-actions@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build & Push to DockerHub
-        uses: docker/build-push-action@v5
-        with:
-          context: book-network
-          file: docker/backend/Dockerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/bsn-api:${{ steps.extract_version.outputs.VERSION }},${{ secrets.DOCKERHUB_USERNAME }}/bsn-api:latest
-          build-args: |
-            PROFILE=dev
-            APP_VERSION=${{ steps.extract_version.outputs.VERSION }}
-  deploy:
-    name: Deploy Backend
-    runs-on: self-hosted
-    needs: [build-image]
-    steps:
-      - name: Create deployment folder
-        run: ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} "mkdir -p ci-cd"
-
-      - name: Copy docker-compose file
-        run: scp -oStrictHostKeyChecking=no docker.compose.yml ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }}:ci-cd/docker-compose.yml
-
-      - name: Set ENV variable and deploy
+      - name: Setup Kustomize
         run: |
-          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} <<EOF
-          export EMAIL_HOST_NAME=${{ secrets.EMAIL_HOST_NAME }}
-          export EMAIL_USER_NAME=${{ secrets.EMAIL_USER_NAME }}
-          export EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
-          cd ci-cd
-          docker compose -f docker-compose.yml pull -q
-          docker compose -f docker-compose.yml up -q
-          EOF
+          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz
+          chmod u+x ./kustomize
+
+      - name: Deploy Image to GKE cluster
+        run: |
+          ./kustomize edit set imagre gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$PROJECT_ID/$IAMGE:$TAG
+          ./kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment/$DEPLOYMENT_NAME
+          kubectl get services -o wide  
