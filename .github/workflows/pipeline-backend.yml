@@ -29,7 +29,7 @@ jobs:
           settings-path: ${{github.workspace}}
 
       - name: Build with Maven
-        uses: mvn clean package -DskipTests
+        run: mvn clean package -DskipTests
 
       - name: Setup Google Cloud CLI
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@2.1.0
@@ -57,12 +57,13 @@ jobs:
 
       - name: Setup Kustomize
         run: |
-          curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz
-          chmod u+x ./kustomize
+            curl -sfLo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz
+            tar -xzf kustomize.tar.gz
+            chmod u+x ./kustomize
 
       - name: Deploy Image to GKE cluster
         run: |
-          ./kustomize edit set imagre gcr.io/PROJECT_ID/IMAGE:TAG=gcr.io/$PROJECT_ID/$IAMGE:$TAG
-          ./kustomize build . | kubectl apply -f -
-          kubectl rollout status deployment/$DEPLOYMENT_NAME
-          kubectl get services -o wide  
+            ./kustomize edit set image gcr.io/$PROJECT_ID/$IMAGE:$TAG=gcr.io/$PROJECT_ID/$IMAGE:$TAG
+            ./kustomize build . | kubectl apply -f -
+            kubectl rollout status deployment/$DEPLOYMENT_NAME
+            kubectl get services -o wide
