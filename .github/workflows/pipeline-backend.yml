@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: ${{secrets.GKE_PROJECT}}
   GKE_CLUSTER: book-social-network
-  GKE_ZONE: europe-west3-c
+  GKE_ZONE: europe-west3
   DEPLOYMENT_NAME: book-social-network-deployment
   IMAGE: book-social-network-image
   TAG: 1.0.0
