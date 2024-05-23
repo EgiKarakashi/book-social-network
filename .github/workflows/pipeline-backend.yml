@@ -4,12 +4,12 @@ name: BSN Backend API Pipeline
     branches:
       - master
 env:
-  PROJECT_ID: '${{secrets.GKE_PROJECT}}'
+  project-id: '${{secrets.GKE_PROJECT}}'
   GKE_CLUSTER: book-social-network
   GKE_ZONE: europe-west3
   DEPLOYMENT_NAME: book-social-network
-  IMAGE: book-social-network-image
-  TAG: 1.0.0
+  image: book-social-network-image
+  tag: 1.0.0
 jobs:
   setup-build-publish-deploy:
     name: Setup Build Publish Deploy
@@ -47,10 +47,10 @@ jobs:
           "$GKE_ZONE"
       - name: Build Docker Image
         run: |
-          docker build -t "gcr.io/$PROJECT_ID/$IMAGE:$TAG" .
+          docker build -t "gcr.io/$project-id/$image:$tag" .
       - name: Publish Docker Image to GCR
         run: |
-          docker push "gcr.io/$PROJECT_ID/$IMAGE:$TAG"
+          docker push "gcr.io/$project-id/$image:$tag"
       - name: Setup Kustomize
         run: >
           curl -sfLo kustomize.tar.gz
@@ -68,8 +68,8 @@ jobs:
             - deployment.yaml
             - service.yaml
           images:
-            - name: gcr.io/$PROJECT_ID/$IMAGE
-              newName: gcr.io/$PROJECT_ID/$IMAGE
+            - name: gcr.io/$project-id/$image
+              newName: gcr.io/$project-id/$image
               newTag: $TAG
           EOF
       - name: Deploy Image to GKE cluster
