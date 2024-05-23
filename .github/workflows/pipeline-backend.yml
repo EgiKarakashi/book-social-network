@@ -82,9 +82,3 @@ jobs:
       - name: Fetch Deployment Events
         run: |
           kubectl get events --sort-by=.metadata.creationTimestamp
-      - name: Fetch Pod Logs
-        run: >
-          POD_NAME=$(kubectl get pods -l app=$DEPLOYMENT_NAME -o
-          jsonpath='{.items[0].metadata.name}')
-
-          kubectl logs $POD_NAME
